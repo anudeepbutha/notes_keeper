@@ -29,10 +29,6 @@ if (process.env.NODE_ENV !== "test")
       console.log("Server started on PORT:", PORT);
     });
   });
-
-  //app.listen(PORT, () => {
-  //  console.log("Server started on PORT:", PORT);
-  //});
 }
 
-export default app; // Export app for tests
+export default app;

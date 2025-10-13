@@ -8,7 +8,6 @@ export default function Home() {
   const navigate = useNavigate();
   const [notes, setNotes] = useState([]);
   const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
   const [editingNote, setEditingNote] = useState(null);
 
   const homeurl = "http://localhost:5001";
@@ -24,7 +23,7 @@ export default function Home() {
     return { Authorization: `Bearer ${token}` };
   };
 
-  // Fetch notes for logged-in user
+  // Fetch notes for logged-in user -> [ { id, title } ]
   async function fetchNotes() {
     try {
       const res = await fetch(`${homeurl}/todos`, {
@@ -41,24 +40,27 @@ export default function Home() {
     }
   }
 
-  // Create or update a note
+  // Create or Update a note
   async function handleCreateOrUpdate() {
+    if (!title.trim()) return;
+
     try {
-      const options = {
-        method: editingNote ? "PUT" : "POST",
+      const method = editingNote ? "PUT" : "POST";
+      const url = editingNote 
+        ? `${homeurl}/todos/${editingNote.id}` 
+        : `${homeurl}/todos`;
+
+      const res = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
           ...getAuthHeader(),
         },
-        body: JSON.stringify({ title, content }),
-      };
-
-      const url = `${homeurl}/todos${editingNote ? `/${editingNote.id}` : ""}`;
-      const res = await fetch(url, options);
+        body: JSON.stringify({ title }),
+      });
       if (!res.ok) throw new Error("Failed to save note");
 
       setTitle("");
-      setContent("");
       setEditingNote(null);
       fetchNotes();
     } catch (err) {
@@ -66,7 +68,19 @@ export default function Home() {
     }
   }
 
-  // Delete a note
+  // Edit a note
+  function handleEdit(note) {
+    setTitle(note.title);
+    setEditingNote(note);
+  }
+
+  // Cancel editing
+  function handleCancel() {
+    setTitle("");
+    setEditingNote(null);
+  }
+
+  // Delete a note -> {}
   async function handleDelete(id) {
     try {
       const res = await fetch(`${homeurl}/todos/${id}`, {
@@ -80,18 +94,20 @@ export default function Home() {
     }
   }
 
-  // Edit a note
-  function handleEdit(note) {
-    setTitle(note.title);
-    setContent(note.content);
-    setEditingNote(note);
-  }
-
-  // Logout function
-  function handleLogout() {
-    localStorage.removeItem("token");
-    dispatch(clearAuth()); // Clear Redux state
-    navigate("/");
+  // Logout function -> {}
+  async function handleLogout() {
+    try {
+      await fetch(`${homeurl}/logout`, {
+        method: "POST",
+        headers: getAuthHeader(),
+      });
+    } catch (err) {
+      console.error("Logout request failed", err);
+    } finally {
+      localStorage.removeItem("token");
+      dispatch(clearAuth());
+      navigate("/");
+    }
   }
 
   return (
@@ -106,7 +122,7 @@ export default function Home() {
         </button>
       </div>
 
-      <div className="bg-white p-4 mb-4">
+      <div className="bg-white p-4 mb-4 shadow rounded">
         <input
           type="text"
           placeholder="Title"
@@ -114,38 +130,47 @@ export default function Home() {
           onChange={(e) => setTitle(e.target.value)}
           className="w-full p-2 border rounded mb-2"
         />
-        <textarea
-          placeholder="Content"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          className="w-full p-2 border rounded mb-2"
-        />
-        <button 
-          onClick={handleCreateOrUpdate}
-          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
-        >
-          {editingNote ? "Update Note" : "Create Note"}
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={handleCreateOrUpdate}
+            className={`${
+              editingNote 
+                ? 'bg-blue-500 hover:bg-blue-600' 
+                : 'bg-green-500 hover:bg-green-600'
+            } text-white px-4 py-2 rounded flex-1`}
+          >
+            {editingNote ? "Update Note" : "Create Note"}
+          </button>
+          {editingNote && (
+            <button 
+              onClick={handleCancel}
+              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-4">
         {notes.map((note) => (
-          <div key={note.id} className="border p-2 rounded">
-            <h2 className="text-lg font-semibold">{note.title}</h2>
-            <p className="text-gray-700">{note.content}</p>
-            <div className="flex gap-2 mt-2">
-              <button 
-                onClick={() => handleEdit(note)}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
-              >
-                Edit
-              </button>
-              <button 
-                onClick={() => handleDelete(note.id)}
-                className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
-              >
-                Delete
-              </button>
+          <div key={note.id} className="border p-4 rounded shadow">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold">{note.title}</h2>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => handleEdit(note)}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
+                >
+                  Edit
+                </button>
+                <button 
+                  onClick={() => handleDelete(note.id)}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
         ))}

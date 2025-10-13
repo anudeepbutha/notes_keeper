@@ -63,7 +63,7 @@ function SigninForm() {
       if (response.ok) {
         const data = await response.json();
         localStorage.setItem("token", data.token);
-        dispatch(setAuth(data));
+        dispatch(setAuth({ token: data.token, user: { email } }));
         navigate('/');
       } else {
         const errData = await response.json();

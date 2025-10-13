@@ -22,28 +22,19 @@ export const signUp = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Save user to MongoDB
-    const user = await User.create({ 
+    await User.create({ 
       email, 
       password: hashedPassword 
     });
 
-    // Generate token
-    const token = jwt.sign(
-      { id: user._id, email: user.email }, 
-      JWT_SECRET, 
-      { expiresIn: "1h" }
-    );
-
-    res.json({ 
-      user: { id: user._id, email: user.email }, 
-      token 
-    });
+    res.status(201).json({ message: "User created successfully" });
   } catch (error) {
     console.error("Signup error:", error);
     res.status(500).json({ message: "Server error during signup" });
   }
 };
 
+// POST /signin -> { token }
 export const signIn = async (req, res) => {
   const { email, password } = req.body;
 
@@ -71,12 +62,16 @@ export const signIn = async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    res.json({ 
-      user: { id: user._id, email: user.email }, 
-      token 
-    });
+    res.json({ token });
   } catch (error) {
     console.error("Signin error:", error);
     res.status(500).json({ message: "Server error during signin" });
   }
+};
+
+// POST /logout -> {}
+export const logout = async (req, res) => {
+  // Since we're using JWT (stateless), logout is handled client-side
+  // This endpoint just returns empty object for consistency
+  res.json({});
 };

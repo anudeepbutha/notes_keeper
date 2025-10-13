@@ -1,55 +1,49 @@
 import Note from "../models/noteModel.js";
 
-// GET all notes for logged-in user
-// In notesController.js - getAllNotes function
+// GET all notes for logged-in user -> [ { id, title } ]
 export async function getAllNotes(req, res) {
   try {
-    console.log("User ID:", req.user.id); // Add this
     const notes = await Note.find({ userId: req.user.id });
-    console.log("Notes found:", notes); // Add this
     res.status(200).json(
       notes.map(note => ({
         id: note._id,
-        title: note.title,
-        content: note.content
+        title: note.title
       }))
     );
   } catch (error) {
-    console.error("Error in getAllNotes:", error); // Add this
     res.status(500).json({ error: error.message });
   }
 }
 
-// POST create note for logged-in user
+// POST create note for logged-in user -> { id, title }
 export async function createNotes(req, res) {
-  const { title, content } = req.body;
-  if (!title || !content)
-    return res.status(400).json({ error: "Title and content required" });
+  const { title } = req.body;
+  if (!title)
+    return res.status(400).json({ error: "Title required" });
 
   try {
-    const note = await Note.create({ title, content, userId: req.user.id });
+    const note = await Note.create({ title, userId: req.user.id });
     res.status(201).json({
       id: note._id,
-      title: note.title,
-      content: note.content
+      title: note.title
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 }
 
-// PUT update note by id (only if belongs to user)
+// PUT update note by id -> { id, title }
 export async function updateNotes(req, res) {
   const { id } = req.params;
-  const { title, content } = req.body;
+  const { title } = req.body;
 
-  if (!title || !content)
-    return res.status(400).json({ error: "Title and content required" });
+  if (!title)
+    return res.status(400).json({ error: "Title required" });
 
   try {
     const note = await Note.findOneAndUpdate(
       { _id: id, userId: req.user.id },
-      { title, content },
+      { title },
       { new: true }
     );
 
@@ -57,15 +51,14 @@ export async function updateNotes(req, res) {
 
     res.status(200).json({
       id: note._id,
-      title: note.title,
-      content: note.content
+      title: note.title
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 }
 
-// DELETE note by id (only if belongs to user)
+// DELETE note by id -> {}
 export async function deleteNotes(req, res) {
   const { id } = req.params;
 
@@ -73,11 +66,7 @@ export async function deleteNotes(req, res) {
     const note = await Note.findOneAndDelete({ _id: id, userId: req.user.id });
     if (!note) return res.status(404).json({ error: "Note not found" });
 
-    res.status(200).json({
-      id: note._id,
-      title: note.title,
-      content: note.content
-    });
+    res.status(200).json({});
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
