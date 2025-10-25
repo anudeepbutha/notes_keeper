@@ -22,12 +22,27 @@ export const signUp = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Save user to MongoDB
-    await User.create({ 
+    const user = await User.create({ 
       email, 
       password: hashedPassword 
     });
 
-    res.status(201).json({ message: "User created successfully" });
+    // Generate token
+    const token = jwt.sign(
+      { id: user._id, email: user.email }, 
+      JWT_SECRET, 
+      { expiresIn: "1h" }
+    );
+
+    // Set httpOnly cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // Use secure in production
+      sameSite: "lax",
+      maxAge: 3600000, // 1 hour
+    });
+
+    res.status(201).json({ token });
   } catch (error) {
     console.error("Signup error:", error);
     res.status(500).json({ message: "Server error during signup" });
@@ -62,6 +77,14 @@ export const signIn = async (req, res) => {
       { expiresIn: "1h" }
     );
 
+    // Set httpOnly cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 3600000, // 1 hour
+    });
+
     res.json({ token });
   } catch (error) {
     console.error("Signin error:", error);
@@ -71,7 +94,27 @@ export const signIn = async (req, res) => {
 
 // POST /logout -> {}
 export const logout = async (req, res) => {
-  // Since we're using JWT (stateless), logout is handled client-side
-  // This endpoint just returns empty object for consistency
+  // Clear the cookie
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+  });
+  
   res.json({});
+};
+
+// GET /verify - Check if user is authenticated
+export const verifyAuth = async (req, res) => {
+  try {
+    res.json({ 
+      token: req.cookies.token,
+      user: { 
+        id: req.user.id, 
+        email: req.user.email 
+      }
+    });
+  } catch (error) {
+    res.status(401).json({ message: "Not authenticated" });
+  }
 };

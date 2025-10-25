@@ -56,13 +56,13 @@ function SigninForm() {
     try {
       const response = await fetch(`${API_BASE}/signin`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem("token", data.token);
         dispatch(setAuth({ token: data.token, user: { email } }));
         navigate('/');
       } else {
@@ -115,7 +115,6 @@ function SigninForm() {
   );
 }
 
-// Inline Signup Form
 function SignupForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -131,16 +130,15 @@ function SignupForm() {
     try {
       const response = await fetch(`${API_BASE}/signup`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
       if (response.ok) {
         setSuccess(true);
-        // Clear form
         setEmail('');
         setPassword('');
-        // Show success message briefly, then user can switch to Sign In tab
       } else {
         const errData = await response.json();
         setError(errData.message || 'Failed to sign up');

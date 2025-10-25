@@ -17,19 +17,13 @@ export default function Home() {
     fetchNotes();
   }, []);
 
-  // Helper to get JWT token from localStorage
-  const getAuthHeader = () => {
-    const token = localStorage.getItem("token");
-    return { Authorization: `Bearer ${token}` };
-  };
-
   // Fetch notes for logged-in user -> [ { id, title } ]
   async function fetchNotes() {
     try {
       const res = await fetch(`${homeurl}/todos`, {
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeader(),
         },
       });
       if (!res.ok) throw new Error("Failed to fetch notes");
@@ -52,9 +46,9 @@ export default function Home() {
 
       const res = await fetch(url, {
         method,
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeader(),
         },
         body: JSON.stringify({ title }),
       });
@@ -85,7 +79,7 @@ export default function Home() {
     try {
       const res = await fetch(`${homeurl}/todos/${id}`, {
         method: "DELETE",
-        headers: getAuthHeader(),
+        credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to delete note");
       fetchNotes();
@@ -99,12 +93,11 @@ export default function Home() {
     try {
       await fetch(`${homeurl}/logout`, {
         method: "POST",
-        headers: getAuthHeader(),
+        credentials: "include",
       });
     } catch (err) {
       console.error("Logout request failed", err);
     } finally {
-      localStorage.removeItem("token");
       dispatch(clearAuth());
       navigate("/");
     }
